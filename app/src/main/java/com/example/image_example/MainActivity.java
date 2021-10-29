@@ -18,9 +18,18 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -80,8 +89,65 @@ public class MainActivity extends AppCompatActivity {
                 byte[] bytes = byteArrayOutputStream.toByteArray();
                 //mTextTv.setText("" + bytes);
 
-                Bitmap bufBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                mImageView2.setImageBitmap(bufBitmap);
+                //Bitmap bufBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                //mImageView2.setImageBitmap(bufBitmap);
+
+                Response.Listener<String> responseListener = new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try{
+                            JSONObject jsonObject = new JSONObject(response);
+                            boolean success = jsonObject.getBoolean("success");
+
+                            if(success) {
+                                Toast.makeText(getApplicationContext(), "success to register", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(getApplicationContext(), "failed to register", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+
+                // request server
+                ImageRequest imageRequest = new ImageRequest("test", 1, Arrays.toString(bytes), responseListener);
+                RequestQueue queue = Volley.newRequestQueue(MainActivity.this);
+                queue.add(imageRequest);
+            }
+        });
+
+        mGetBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Response.Listener<String> responseListener = new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        try{
+                            JSONObject jsonObject = new JSONObject(response);
+
+                            boolean success = jsonObject.getBoolean("success");
+
+                            if(success){
+                                String getID = jsonObject.getString("ID");
+                                int number = jsonObject.getInt("num");
+                                String image = jsonObject.getString("Image");
+                                byte[] imageBytes = image.getBytes(StandardCharsets.UTF_8);
+                                Bitmap getImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                                mImageView2.setImageBitmap(getImage);
+                            } else {
+                                Toast.makeText(getApplicationContext(), "failure", Toast.LENGTH_SHORT).show();
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                };
+
+                GetRequest getRequest = new GetRequest("test", 1, responseListener);
+                RequestQueue queue1 = Volley.newRequestQueue(MainActivity.this);
+                queue1.add(getRequest);
             }
         });
     }
