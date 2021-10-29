@@ -7,21 +7,28 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
 public class MainActivity extends AppCompatActivity {
 
-    ImageView mImageView;
+    ImageView mImageView, mImageView2;
     Button mChooseBtn, mSendBtn, mGetBtn;
-    TextView mTextTv;
+    //TextView mTextTv;
 
-    String temp;
+    Bitmap bitmap;
 
     private static final int IMAGE_PICK_CODE = 1000;
     private static final int PERMISSION_CODE = 1001;
@@ -33,11 +40,12 @@ public class MainActivity extends AppCompatActivity {
 
         //VIEWS
         mImageView = findViewById(R.id.image_view);
+        mImageView2 = findViewById(R.id.image_view2);
         mChooseBtn = findViewById(R.id.choose_image_btn);
         mSendBtn = findViewById(R.id.send_image_btn);
         mGetBtn = findViewById(R.id.get_image_btn);
 
-        mTextTv = findViewById(R.id.text_tv);
+        //mTextTv = findViewById(R.id.text_tv);
 
         //handle button click
         mChooseBtn.setOnClickListener(new View.OnClickListener() {
@@ -67,7 +75,13 @@ public class MainActivity extends AppCompatActivity {
         mSendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                mTextTv.setText(temp);
+                ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream);
+                byte[] bytes = byteArrayOutputStream.toByteArray();
+                //mTextTv.setText("" + bytes);
+
+                Bitmap bufBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                mImageView2.setImageBitmap(bufBitmap);
             }
         });
     }
@@ -102,8 +116,15 @@ public class MainActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_OK && requestCode == IMAGE_PICK_CODE) {
             //set image to image view
-            mImageView.setImageURI(data.getData());
-            temp = data.getData().toString();
+            // mImageView.setImageURI(data.getData());
+
+            try {
+                InputStream inputStream = getContentResolver().openInputStream(data.getData());
+                bitmap = BitmapFactory.decodeStream(inputStream);
+                mImageView.setImageBitmap(bitmap);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
